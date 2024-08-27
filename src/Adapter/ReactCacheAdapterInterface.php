@@ -24,4 +24,8 @@ use React\Cache\CacheInterface;
  */
 interface ReactCacheAdapterInterface extends CacheInterface
 {
+    /**
+     * Ensures that the key does not contain any reserved characters.
+     */
+    public function sanitiseCacheKey(string $key): string;
 }

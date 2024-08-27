@@ -59,7 +59,7 @@ class ReactCacheAdapter implements ReactCacheAdapterInterface
         $deferred = new Deferred();
 
         try {
-            $deferred->resolve($this->psrCachePool->deleteItem($key));
+            $deferred->resolve($this->psrCachePool->deleteItem($this->sanitiseCacheKey($key)));
         } catch (Exception) {
             // When an error occurs, false should be returned.
             $deferred->resolve(false);
@@ -75,8 +75,10 @@ class ReactCacheAdapter implements ReactCacheAdapterInterface
     {
         $deferred = new Deferred();
 
+        $sanitisedKeys = array_map($this->sanitiseCacheKey(...), $keys);
+
         try {
-            $deferred->resolve($this->psrCachePool->deleteItems($keys));
+            $deferred->resolve($this->psrCachePool->deleteItems($sanitisedKeys));
         } catch (Exception) {
             // When an error occurs, false should be returned.
             $deferred->resolve(false);
@@ -93,7 +95,7 @@ class ReactCacheAdapter implements ReactCacheAdapterInterface
         $deferred = new Deferred();
 
         try {
-            $item = $this->psrCachePool->getItem($key);
+            $item = $this->psrCachePool->getItem($this->sanitiseCacheKey($key));
 
             $deferred->resolve($item->isHit() ? $item->get() : $default);
         } catch (Exception) {
@@ -128,8 +130,17 @@ class ReactCacheAdapter implements ReactCacheAdapterInterface
     {
         $deferred = new Deferred();
 
+        $sanitisedKeys = [];
+        $sanitisedKeyToOriginalMap = [];
+
+        foreach ($keys as $key) {
+            $sanitisedKey = $this->sanitiseCacheKey($key);
+            $sanitisedKeys[] = $sanitisedKey;
+            $sanitisedKeyToOriginalMap[$sanitisedKey] = $key;
+        }
+
         try {
-            $items = $this->psrCachePool->getItems($keys);
+            $items = $this->psrCachePool->getItems($sanitisedKeys);
         } catch (Exception) {
             // On error, the exception should be swallowed and instead
             // all keys should be returned with the default as their value.
@@ -141,7 +152,7 @@ class ReactCacheAdapter implements ReactCacheAdapterInterface
         try {
             $values = [];
 
-            foreach ($items as $key => $item) {
+            foreach ($items as $sanitisedKey => $item) {
                 try {
                     $value = $item->isHit() ? $item->get() : $default;
                 } catch (Exception) {
@@ -149,7 +160,7 @@ class ReactCacheAdapter implements ReactCacheAdapterInterface
                     $value = $default;
                 }
 
-                $values[$key] = $value;
+                $values[$sanitisedKeyToOriginalMap[$sanitisedKey]] = $value;
             }
 
             $deferred->resolve($values);
@@ -168,7 +179,7 @@ class ReactCacheAdapter implements ReactCacheAdapterInterface
         $deferred = new Deferred();
 
         try {
-            $deferred->resolve($this->psrCachePool->hasItem($key));
+            $deferred->resolve($this->psrCachePool->hasItem($this->sanitiseCacheKey($key)));
         } catch (Exception) {
             // When an error occurs, false should be returned.
             $deferred->resolve(false);
@@ -180,12 +191,20 @@ class ReactCacheAdapter implements ReactCacheAdapterInterface
     /**
      * @inheritDoc
      */
+    public function sanitiseCacheKey(string $key): string
+    {
+        return hash('sha256', $key);
+    }
+
+    /**
+     * @inheritDoc
+     */
     public function set($key, $value, $ttl = null): PromiseInterface
     {
         $deferred = new Deferred();
 
         try {
-            $item = $this->psrCachePool->getItem($key);
+            $item = $this->psrCachePool->getItem($this->sanitiseCacheKey($key));
 
             $item->set($value);
 
@@ -218,9 +237,18 @@ class ReactCacheAdapter implements ReactCacheAdapterInterface
     {
         $deferred = new Deferred();
 
+        $sanitisedKeys = [];
+        $sanitisedKeyToOriginalMap = [];
+
+        foreach (array_keys($values) as $key) {
+            $sanitisedKey = $this->sanitiseCacheKey($key);
+            $sanitisedKeys[] = $sanitisedKey;
+            $sanitisedKeyToOriginalMap[$sanitisedKey] = $key;
+        }
+
         try {
             /** @var CacheItemInterface[] $items */
-            $items = $this->psrCachePool->getItems(array_keys($values));
+            $items = $this->psrCachePool->getItems($sanitisedKeys);
         } catch (Exception) {
             // On error, the exception should be swallowed and false returned.
             $deferred->resolve(false);
@@ -228,37 +256,32 @@ class ReactCacheAdapter implements ReactCacheAdapterInterface
             return $deferred->promise();
         }
 
-        try {
-            $success = true;
+        $success = true;
 
-            foreach ($items as $key => $item) {
-                try {
-                    $item->set($values[$key]);
+        foreach ($items as $sanitisedKey => $item) {
+            try {
+                $item->set($values[$sanitisedKeyToOriginalMap[$sanitisedKey]]);
 
-                    $item->expiresAfter($this->getEffectiveTtl($ttl));
+                $item->expiresAfter($this->getEffectiveTtl($ttl));
 
-                    /*
-                     * Note that we cannot use `->saveDeferred(...)` as that gives no feedback
-                     * on when the save is actually performed, which we need to satisfy the interface.
-                     *
-                     * As documented in the README, it is up to the consuming application to ensure
-                     * that PSR adapters that block are not used.
-                     */
-                    if (!$this->psrCachePool->save($item)) {
-                        $success = false;
-                    }
-                } catch (Exception) {
-                    // When an error occurs, false should be returned.
-                    // Continue processing the remaining items.
+                /*
+                 * Note that we cannot use `->saveDeferred(...)` as that gives no feedback
+                 * on when the save is actually performed, which we need to satisfy the interface.
+                 *
+                 * As documented in the README, it is up to the consuming application to ensure
+                 * that PSR adapters that block are not used.
+                 */
+                if (!$this->psrCachePool->save($item)) {
                     $success = false;
                 }
+            } catch (Exception) {
+                // When an error occurs, false should be returned.
+                // Continue processing the remaining items.
+                $success = false;
             }
-
-            $deferred->resolve($success);
-        } catch (Exception) {
-            // When an error occurs, false should be returned.
-            $deferred->resolve(false);
         }
+
+        $deferred->resolve($success);
 
         return $deferred->promise();
     }

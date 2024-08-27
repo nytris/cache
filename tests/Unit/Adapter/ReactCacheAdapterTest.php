@@ -97,7 +97,7 @@ class ReactCacheAdapterTest extends AbstractTestCase
     public function testDeleteReturnsPromiseResolvingTrueOnSuccess(): void
     {
         $this->psrAdapter->allows()
-            ->deleteItem('my_key')
+            ->deleteItem($this->reactCacheAdapter->sanitiseCacheKey('my_key'))
             ->andReturnTrue();
 
         static::assertTrue(TasqueEventLoop::await($this->reactCacheAdapter->delete('my_key')));
@@ -106,7 +106,7 @@ class ReactCacheAdapterTest extends AbstractTestCase
     public function testDeleteReturnsPromiseResolvingFalseOnFailure(): void
     {
         $this->psrAdapter->allows()
-            ->deleteItem('my_key')
+            ->deleteItem($this->reactCacheAdapter->sanitiseCacheKey('my_key'))
             ->andReturnFalse();
 
         static::assertFalse(TasqueEventLoop::await($this->reactCacheAdapter->delete('my_key')));
@@ -115,7 +115,7 @@ class ReactCacheAdapterTest extends AbstractTestCase
     public function testDeleteReturnsPromiseResolvingFalseOnException(): void
     {
         $this->psrAdapter->allows()
-            ->deleteItem('my_key')
+            ->deleteItem($this->reactCacheAdapter->sanitiseCacheKey('my_key'))
             ->andThrow(new RuntimeException('Bang!'));
 
         static::assertFalse(TasqueEventLoop::await($this->reactCacheAdapter->delete('my_key')));
@@ -124,7 +124,10 @@ class ReactCacheAdapterTest extends AbstractTestCase
     public function testDeleteMultipleReturnsPromiseResolvingTrueOnSuccess(): void
     {
         $this->psrAdapter->allows()
-            ->deleteItems(['key1', 'key2'])
+            ->deleteItems([
+                $this->reactCacheAdapter->sanitiseCacheKey('key1'),
+                $this->reactCacheAdapter->sanitiseCacheKey('key2')
+            ])
             ->andReturnTrue();
 
         static::assertTrue(
@@ -137,7 +140,10 @@ class ReactCacheAdapterTest extends AbstractTestCase
     public function testDeleteMultipleReturnsPromiseResolvingFalseOnFailure(): void
     {
         $this->psrAdapter->allows()
-            ->deleteItems(['key1', 'key2'])
+            ->deleteItems([
+                $this->reactCacheAdapter->sanitiseCacheKey('key1'),
+                $this->reactCacheAdapter->sanitiseCacheKey('key2')
+            ])
             ->andReturnFalse();
 
         static::assertFalse(
@@ -150,7 +156,10 @@ class ReactCacheAdapterTest extends AbstractTestCase
     public function testDeleteMultipleReturnsPromiseResolvingFalseOnException(): void
     {
         $this->psrAdapter->allows()
-            ->deleteItems(['key1', 'key2'])
+            ->deleteItems([
+                $this->reactCacheAdapter->sanitiseCacheKey('key1'),
+                $this->reactCacheAdapter->sanitiseCacheKey('key2')
+            ])
             ->andThrow(new RuntimeException('Bang!'));
 
         static::assertFalse(
@@ -167,7 +176,7 @@ class ReactCacheAdapterTest extends AbstractTestCase
             'isHit' => true,
         ]);
         $this->psrAdapter->allows()
-            ->getItem('my_key')
+            ->getItem($this->reactCacheAdapter->sanitiseCacheKey('my_key'))
             ->andReturn($item);
 
         static::assertSame(
@@ -184,7 +193,7 @@ class ReactCacheAdapterTest extends AbstractTestCase
             'isHit' => false,
         ]);
         $this->psrAdapter->allows()
-            ->getItem('my_key')
+            ->getItem($this->reactCacheAdapter->sanitiseCacheKey('my_key'))
             ->andReturn($item);
 
         static::assertSame(
@@ -198,7 +207,7 @@ class ReactCacheAdapterTest extends AbstractTestCase
     public function testGetReturnsPromiseResolvingToGivenDefaultValueOnException(): void
     {
         $this->psrAdapter->allows()
-            ->getItem('my_key')
+            ->getItem($this->reactCacheAdapter->sanitiseCacheKey('my_key'))
             ->andThrow(new RuntimeException('Bang!'));
 
         static::assertSame(
@@ -220,10 +229,13 @@ class ReactCacheAdapterTest extends AbstractTestCase
             'isHit' => true,
         ]);
         $this->psrAdapter->allows()
-            ->getItems(['my_first_key', 'my_second_key'])
+            ->getItems([
+                $this->reactCacheAdapter->sanitiseCacheKey('my_first_key'),
+                $this->reactCacheAdapter->sanitiseCacheKey('my_second_key')
+            ])
             ->andReturn([
-                'my_first_key' => $item1,
-                'my_second_key' => $item2,
+                $this->reactCacheAdapter->sanitiseCacheKey('my_first_key') => $item1,
+                $this->reactCacheAdapter->sanitiseCacheKey('my_second_key') => $item2,
             ]);
 
         static::assertEquals(
@@ -247,10 +259,13 @@ class ReactCacheAdapterTest extends AbstractTestCase
             'isHit' => true,
         ]);
         $this->psrAdapter->allows()
-            ->getItems(['my_first_key', 'my_second_key'])
+            ->getItems([
+                $this->reactCacheAdapter->sanitiseCacheKey('my_first_key'),
+                $this->reactCacheAdapter->sanitiseCacheKey('my_second_key')
+            ])
             ->andReturn([
-                'my_first_key' => $item1,
-                'my_second_key' => $item2,
+                $this->reactCacheAdapter->sanitiseCacheKey('my_first_key') => $item1,
+                $this->reactCacheAdapter->sanitiseCacheKey('my_second_key') => $item2,
             ]);
 
         static::assertEquals(
@@ -277,10 +292,13 @@ class ReactCacheAdapterTest extends AbstractTestCase
             'isHit' => true,
         ]);
         $this->psrAdapter->allows()
-            ->getItems(['my_first_key', 'my_second_key'])
+            ->getItems([
+                $this->reactCacheAdapter->sanitiseCacheKey('my_first_key'),
+                $this->reactCacheAdapter->sanitiseCacheKey('my_second_key')
+            ])
             ->andReturn([
-                'my_first_key' => $item1,
-                'my_second_key' => $item2,
+                $this->reactCacheAdapter->sanitiseCacheKey('my_first_key') => $item1,
+                $this->reactCacheAdapter->sanitiseCacheKey('my_second_key') => $item2,
             ]);
 
         static::assertEquals(
@@ -297,7 +315,7 @@ class ReactCacheAdapterTest extends AbstractTestCase
     public function testHasReturnsPromiseResolvingTrueOnSuccess(): void
     {
         $this->psrAdapter->allows()
-            ->hasItem('my_key')
+            ->hasItem($this->reactCacheAdapter->sanitiseCacheKey('my_key'))
             ->andReturnTrue();
 
         static::assertTrue(TasqueEventLoop::await($this->reactCacheAdapter->has('my_key')));
@@ -306,7 +324,7 @@ class ReactCacheAdapterTest extends AbstractTestCase
     public function testHasReturnsPromiseResolvingFalseOnFailure(): void
     {
         $this->psrAdapter->allows()
-            ->hasItem('my_key')
+            ->hasItem($this->reactCacheAdapter->sanitiseCacheKey('my_key'))
             ->andReturnFalse();
 
         static::assertFalse(TasqueEventLoop::await($this->reactCacheAdapter->has('my_key')));
@@ -315,9 +333,289 @@ class ReactCacheAdapterTest extends AbstractTestCase
     public function testHasReturnsPromiseResolvingFalseOnException(): void
     {
         $this->psrAdapter->allows()
-            ->hasItem('my_key')
+            ->hasItem($this->reactCacheAdapter->sanitiseCacheKey('my_key'))
             ->andThrow(new RuntimeException('Bang!'));
 
         static::assertFalse(TasqueEventLoop::await($this->reactCacheAdapter->has('my_key')));
+    }
+
+    public function testSanitiseCacheKeyReturnsASha256Hash(): void
+    {
+        static::assertSame(
+            hash('sha256', 'my cache key'),
+            $this->reactCacheAdapter->sanitiseCacheKey('my cache key')
+        );
+    }
+
+    public function testSetStoresItemCorrectlyWhenNoTtlGiven(): void
+    {
+        $item = mock(CacheItemInterface::class);
+        $this->psrAdapter->allows()
+            ->getItem($this->reactCacheAdapter->sanitiseCacheKey('my_key'))
+            ->andReturn($item);
+
+        $item->expects()
+            ->set('my value')
+            ->once();
+        $item->expects()
+            ->expiresAfter(null)
+            ->once();
+        $this->psrAdapter->expects()
+            ->save($item)
+            ->once()
+            ->andReturnTrue();
+        static::assertTrue(
+            TasqueEventLoop::await(
+                $this->reactCacheAdapter->set('my_key', 'my value')
+            )
+        );
+    }
+
+    public function testSetStoresItemCorrectlyWhenTtlGiven(): void
+    {
+        $item = mock(CacheItemInterface::class);
+        $this->psrAdapter->allows()
+            ->getItem($this->reactCacheAdapter->sanitiseCacheKey('my_key'))
+            ->andReturn($item);
+
+        $item->expects()
+            ->set('my value')
+            ->once();
+        $item->expects()
+            ->expiresAfter(123)
+            ->once();
+        $this->psrAdapter->expects()
+            ->save($item)
+            ->once()
+            ->andReturnTrue();
+        static::assertTrue(
+            TasqueEventLoop::await(
+                $this->reactCacheAdapter->set('my_key', 'my value', 123.4)
+            )
+        );
+    }
+
+    public function testSetReturnsPromiseResolvingToFalseOnFailure(): void
+    {
+        $item = mock(CacheItemInterface::class, [
+            'expiresAfter' => null,
+            'set' => null,
+        ]);
+        $this->psrAdapter->allows()
+            ->getItem($this->reactCacheAdapter->sanitiseCacheKey('my_key'))
+            ->andReturn($item);
+        $this->psrAdapter->allows()
+            ->save($item)
+            ->andReturnFalse();
+
+        static::assertFalse(
+            TasqueEventLoop::await(
+                $this->reactCacheAdapter->set('my_key', 'my value')
+            )
+        );
+    }
+
+    public function testSetReturnsPromiseResolvingToFalseOnException(): void
+    {
+        $item = mock(CacheItemInterface::class, [
+            'expiresAfter' => null,
+            'set' => null,
+        ]);
+        $this->psrAdapter->allows()
+            ->getItem($this->reactCacheAdapter->sanitiseCacheKey('my_key'))
+            ->andReturn($item);
+        $this->psrAdapter->allows()
+            ->save($item)
+            ->andThrow(new RuntimeException('Bang!'));
+
+        static::assertFalse(
+            TasqueEventLoop::await(
+                $this->reactCacheAdapter->set('my_key', 'my value')
+            )
+        );
+    }
+
+    public function testSetMultipleStoresItemsCorrectlyWhenNoTtlGiven(): void
+    {
+        $item1 = mock(CacheItemInterface::class);
+        $item2 = mock(CacheItemInterface::class);
+        $this->psrAdapter->allows()
+            ->getItems([
+                $this->reactCacheAdapter->sanitiseCacheKey('my_first_key'),
+                $this->reactCacheAdapter->sanitiseCacheKey('my_second_key'),
+            ])
+            ->andReturn([
+                $this->reactCacheAdapter->sanitiseCacheKey('my_first_key') => $item1,
+                $this->reactCacheAdapter->sanitiseCacheKey('my_second_key') => $item2,
+            ]);
+
+        $item1->expects()
+            ->set('my first value')
+            ->once();
+        $item1->expects()
+            ->expiresAfter(null)
+            ->once();
+        $this->psrAdapter->expects()
+            ->save($item1)
+            ->once()
+            ->andReturnTrue();
+        $item2->expects()
+            ->set('my second value')
+            ->once();
+        $item2->expects()
+            ->expiresAfter(null)
+            ->once();
+        $this->psrAdapter->expects()
+            ->save($item2)
+            ->once()
+            ->andReturnTrue();
+        static::assertTrue(
+            TasqueEventLoop::await(
+                $this->reactCacheAdapter->setMultiple([
+                    'my_first_key' => 'my first value',
+                    'my_second_key' => 'my second value',
+                ])
+            )
+        );
+    }
+
+    public function testSetMultipleStoresItemsCorrectlyWhenTtlGiven(): void
+    {
+        $item1 = mock(CacheItemInterface::class);
+        $item2 = mock(CacheItemInterface::class);
+        $this->psrAdapter->allows()
+            ->getItems([
+                $this->reactCacheAdapter->sanitiseCacheKey('my_first_key'),
+                $this->reactCacheAdapter->sanitiseCacheKey('my_second_key'),
+            ])
+            ->andReturn([
+                $this->reactCacheAdapter->sanitiseCacheKey('my_first_key') => $item1,
+                $this->reactCacheAdapter->sanitiseCacheKey('my_second_key') => $item2,
+            ]);
+
+        $item1->expects()
+            ->set('my first value')
+            ->once();
+        $item1->expects()
+            ->expiresAfter(123)
+            ->once();
+        $this->psrAdapter->expects()
+            ->save($item1)
+            ->once()
+            ->andReturnTrue();
+        $item2->expects()
+            ->set('my second value')
+            ->once();
+        $item2->expects()
+            ->expiresAfter(123)
+            ->once();
+        $this->psrAdapter->expects()
+            ->save($item2)
+            ->once()
+            ->andReturnTrue();
+        static::assertTrue(
+            TasqueEventLoop::await(
+                $this->reactCacheAdapter->setMultiple(
+                    [
+                        'my_first_key' => 'my first value',
+                        'my_second_key' => 'my second value',
+                    ],
+                    123.4
+                )
+            )
+        );
+    }
+
+    public function testSetMultipleReturnsPromiseResolvingToFalseOnAnySingleItemFailure(): void
+    {
+        $item1 = mock(CacheItemInterface::class, [
+            'expiresAfter' => null,
+            'set' => null,
+        ]);
+        $item2 = mock(CacheItemInterface::class, [
+            'expiresAfter' => null,
+            'set' => null,
+        ]);
+        $this->psrAdapter->allows()
+            ->getItems([
+                $this->reactCacheAdapter->sanitiseCacheKey('my_first_key'),
+                $this->reactCacheAdapter->sanitiseCacheKey('my_second_key'),
+            ])
+            ->andReturn([
+                $this->reactCacheAdapter->sanitiseCacheKey('my_first_key') => $item1,
+                $this->reactCacheAdapter->sanitiseCacheKey('my_second_key') => $item2,
+            ]);
+        $this->psrAdapter->allows()
+            ->save($item1)
+            ->andReturnFalse();
+        $this->psrAdapter->allows()
+            ->save($item2)
+            ->andReturnTrue();
+
+        static::assertFalse(
+            TasqueEventLoop::await(
+                $this->reactCacheAdapter->setMultiple([
+                    'my_first_key' => 'my first value',
+                    'my_second_key' => 'my second value',
+                ])
+            )
+        );
+    }
+
+    public function testSetMultipleReturnsPromiseResolvingToFalseOnExceptionFetchingItems(): void
+    {
+        $this->psrAdapter->allows()
+            ->getItems([
+                $this->reactCacheAdapter->sanitiseCacheKey('my_first_key'),
+                $this->reactCacheAdapter->sanitiseCacheKey('my_second_key'),
+            ])
+            ->andThrow(new RuntimeException('Bang!'));
+
+        static::assertFalse(
+            TasqueEventLoop::await(
+                $this->reactCacheAdapter->setMultiple([
+                    'my_first_key' => 'my first value',
+                    'my_second_key' => 'my second value',
+                ])
+            )
+        );
+    }
+
+    public function testSetMultipleReturnsPromiseResolvingToFalseOnExceptionSavingAnySingleItem(): void
+    {
+        $item1 = mock(CacheItemInterface::class, [
+            'expiresAfter' => null,
+            'set' => null,
+        ]);
+        $item2 = mock(CacheItemInterface::class, [
+            'expiresAfter' => null,
+            'set' => null,
+        ]);
+        $this->psrAdapter->allows()
+            ->getItems([
+                $this->reactCacheAdapter->sanitiseCacheKey('my_first_key'),
+                $this->reactCacheAdapter->sanitiseCacheKey('my_second_key'),
+            ])
+            ->andReturn([
+                $this->reactCacheAdapter->sanitiseCacheKey('my_first_key') => $item1,
+                $this->reactCacheAdapter->sanitiseCacheKey('my_second_key') => $item2,
+            ]);
+
+        $this->psrAdapter->expects()
+            ->save($item1)
+            ->once()
+            ->andThrow(new RuntimeException('Bang!'));
+        $this->psrAdapter->expects()
+            ->save($item2)
+            ->once()
+            ->andReturnTrue();
+        static::assertFalse(
+            TasqueEventLoop::await(
+                $this->reactCacheAdapter->setMultiple([
+                    'my_first_key' => 'my first value',
+                    'my_second_key' => 'my second value',
+                ])
+            )
+        );
     }
 }
