@@ -1,0 +1,11 @@
+parameters:
+	ignoreErrors:
+		-
+			message: "#^Parameter \\#1 \\$expiration of method Nytris\\\\Cache\\\\Adapter\\\\LightCacheItem\\:\\:expiresAt\\(\\) expects DateTimeInterface\\|null, string given\\.$#"
+			count: 1
+			path: tests/Unit/Adapter/LightCacheItemTest.php
+
+		-
+			message: "#^Parameter \\#1 \\$time of method Nytris\\\\Cache\\\\Adapter\\\\LightCacheItem\\:\\:expiresAfter\\(\\) expects DateInterval\\|int\\|null, string given\\.$#"
+			count: 1
+			path: tests/Unit/Adapter/LightCacheItemTest.php
