@@ -130,12 +130,27 @@ class LightApcuAdapter implements CacheItemPoolInterface
             throw new InvalidArgumentException('$item must be a LightCacheItem');
         }
 
+        $expiry = $item->getExpiry();
+
+        if ($expiry === null) {
+            // No expiry is set for the item, so we use the default lifetime,
+            // which may be 0 to indicate infinite lifetime.
+            $ttl = $this->defaultLifetime;
+        } else {
+            // A non-infinite specific expiry time was set for the item.
+            $ttl = (int) ($expiry - microtime(as_float: true));
+
+            if ($ttl === 0) {
+                // A TTL of 0 would actually tell apcu_store(...) to store infinitely,
+                // rather than for 0 seconds, so we skip storage.
+                return true;
+            }
+        }
+
         return apcu_store(
             $this->buildKey($item->getKey()),
             $item->get(),
-            $item->getExpiry() !== null ?
-                (int) ($item->getExpiry() - microtime(as_float: true)) :
-                $this->defaultLifetime
+            $ttl
         );
     }
 

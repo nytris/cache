@@ -43,6 +43,31 @@ $bootConfig->installPackage(new MyNytrisPackage(
 return $bootConfig;
 ```
 
+### LightApcuAdapter
+
+This is a thin, lightweight, minimal wrapper around APCu that implements the PSR-6 interface.
+
+Usage:
+
+```php
+<?php
+
+declare(strict_types=1);
+
+use Nytris\Cache\Adapter\LightApcuAdapter;
+
+$adapter = new LightApcuAdapter(
+    namespace: 'my_namespace', // Defaults to the empty string.
+    defaultLifetime: 3600      // Defaults to 0 / no expiry.
+);
+
+$cacheItem = $adapter->getItem('my_key');
+$cacheItem->set('my_value');
+$cacheItem->expiresAfter(2); // Set to expire 2 seconds from now.
+
+$adapter->save($cacheItem);
+```
+
 ### Caveats
 
 - PSR-6 cache adapters may block, if so then the ReactPHP event loop will be blocked.
