@@ -84,6 +84,17 @@ class LightApcuAdapterTest extends AbstractFunctionalTestCase
         static::assertSame('value1', $item->get());
     }
 
+    public function testGetItemRetrievesStoredItemWithBooleanFalseAsValue(): void
+    {
+        apcu_store('test_namespace/item1', false);
+
+        $item = $this->adapter->getItem('item1');
+
+        static::assertInstanceOf(LightCacheItem::class, $item);
+        static::assertTrue($item->isHit());
+        static::assertFalse($item->get());
+    }
+
     public function testGetItemReturnsMissWhenItemNotInCache(): void
     {
         $item = $this->adapter->getItem('nonexistent_item');
@@ -126,7 +137,16 @@ class LightApcuAdapterTest extends AbstractFunctionalTestCase
         static::assertSame('value1', apcu_fetch('test_namespace/item1'));
     }
 
-    public function testSaveStoresItemWithExpiresAt(): void
+    public function testSaveStoresCacheItemWithBooleanFalseAsValue(): void
+    {
+        $cacheItem = new LightCacheItem(isHit: true, key: 'item1', value: false);
+
+        static::assertTrue($this->adapter->save($cacheItem));
+        static::assertFalse(apcu_fetch('test_namespace/item1', $success));
+        static::assertTrue($success);
+    }
+
+    public function testSaveStoresItemWithFutureExpiresAt(): void
     {
         $expiryTime = new DateTimeImmutable('+2 seconds');
         $cacheItem = new LightCacheItem(isHit: true, key: 'item1', value: 'value1');
@@ -138,15 +158,53 @@ class LightApcuAdapterTest extends AbstractFunctionalTestCase
         static::assertFalse($this->adapter->hasItem('item1'), 'Item should no longer exist');
     }
 
-    public function testSaveStoresItemWithExpiresAfter(): void
+    public function testSaveDoesNotStoreItemWithExpiresAtOfNow(): void
+    {
+        $now = new DateTimeImmutable();
+        $cacheItem = new LightCacheItem(isHit: true, key: 'item1', value: 'value1');
+        $cacheItem->expiresAt($now);
+
+        static::assertTrue($this->adapter->save($cacheItem));
+        static::assertFalse($this->adapter->hasItem('item1'), 'Item should not be stored');
+    }
+
+    public function testSaveDoesNotStoreItemWithPastExpiresAt(): void
+    {
+        $expiryTime = new DateTimeImmutable('-2 seconds');
+        $cacheItem = new LightCacheItem(isHit: true, key: 'item1', value: 'value1');
+        $cacheItem->expiresAt($expiryTime);
+
+        static::assertTrue($this->adapter->save($cacheItem));
+        static::assertFalse($this->adapter->hasItem('item1'), 'Item should not be stored');
+    }
+
+    public function testSaveStoresItemWithFutureExpiresAfter(): void
     {
         $cacheItem = new LightCacheItem(isHit: true, key: 'item1', value: 'value1');
-        $cacheItem->expiresAfter(2); // 2 seconds
+        $cacheItem->expiresAfter(2); // 2 seconds from now.
 
         static::assertTrue($this->adapter->save($cacheItem));
         static::assertTrue($this->adapter->hasItem('item1'), 'Item should exist before expiring');
         sleep(3); // Allow item to expire.
         static::assertFalse($this->adapter->hasItem('item1'), 'Item should no longer exist');
+    }
+
+    public function testSaveDoesNotStoreItemWithZeroExpiresAfter(): void
+    {
+        $cacheItem = new LightCacheItem(isHit: true, key: 'item1', value: 'value1');
+        $cacheItem->expiresAfter(0); // Right now.
+
+        static::assertTrue($this->adapter->save($cacheItem));
+        static::assertFalse($this->adapter->hasItem('item1'), 'Item should not be stored');
+    }
+
+    public function testSaveDoesNotStoreItemWithNegativeExpiresAfter(): void
+    {
+        $cacheItem = new LightCacheItem(isHit: true, key: 'item1', value: 'value1');
+        $cacheItem->expiresAfter(-2); // 2 seconds ago.
+
+        static::assertTrue($this->adapter->save($cacheItem));
+        static::assertFalse($this->adapter->hasItem('item1'), 'Item should not be stored');
     }
 
     public function testSaveStoresItemWithDefaultLifetime(): void
